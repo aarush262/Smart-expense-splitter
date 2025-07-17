@@ -110,19 +110,12 @@ function Dashboard({ user }) {
 
     try {
       const formData = new FormData();
-      formData.append("groupId", groupCreated._id?.toString());
+      formData.append("groupId", groupCreated._id);
       formData.append("description", expenseDesc);
       formData.append("amount", expenseAmount);
       formData.append("paidBy", paidBy);
-      if (!splitBetween.includes(paidBy)) {
-        splitBetween.push(paidBy);
-      }
-      splitBetween.forEach((p) => formData.append("splitBetween", p));
+      splitBetween.forEach((p) => formData.append("splitBetween", p)); // ✅ NO []
       if (image) formData.append("image", image);
-
-      for (const pair of formData.entries()) {
-        console.log(pair[0], pair[1]);
-      }
 
       await axios.post("https://smart-expense-splitter.onrender.com/api/expenses", formData, {
         headers: {
@@ -171,7 +164,8 @@ function Dashboard({ user }) {
   };
 
   return (
-    <div className="relative min-h-screen bg-no-repeat bg-center bg-cover font-body text-montraText"
+    <div
+      className="relative min-h-screen bg-no-repeat bg-center bg-cover font-body text-montraText"
       style={{
         backgroundImage: "url('/Background-image.jpg')",
         backgroundAttachment: "fixed",
@@ -323,12 +317,16 @@ function Dashboard({ user }) {
           <Filter onApplyFilter={handleApplyFilter} members={groupCreated.members} />
         )}
 
-        {/* Expense Breakdown */}
         {expenses.length > 0 && (
           <div className="bg-montraCard backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-white/10">
             <h2 className="text-xl font-bold mb-4">Expense Breakdown</h2>
             {expenses.map((exp, idx) => {
-              const perPerson = exp.amount / exp.splitBetween.length;
+              const numPeople = exp.splitBetween.includes(exp.paidBy)
+                ? exp.splitBetween.length - 1
+                : exp.splitBetween.length;
+
+              const perPerson = numPeople > 0 ? exp.amount / numPeople : 0;
+
               return (
                 <div key={idx} className="mb-4 border-b border-white/10 pb-4">
                   <h3 className="text-lg font-semibold text-white">{exp.description}</h3>
@@ -342,15 +340,15 @@ function Dashboard({ user }) {
                       className="w-full rounded-md mb-2 border border-white/10"
                     />
                   )}
-                  {exp.splitBetween.map((person, i) =>
-                    person !== exp.paidBy && (
+                  {exp.splitBetween
+                    .filter((person) => person !== exp.paidBy)
+                    .map((person, i) => (
                       <p key={i} className="text-sm text-gray-400">
                         {person} owes{" "}
                         <span className="text-montraAccent font-semibold">{exp.paidBy}</span> ₹
                         {perPerson.toFixed(2)}
                       </p>
-                    )
-                  )}
+                    ))}
                 </div>
               );
             })}
