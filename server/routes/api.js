@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require("multer");
 const upload = multer({ storage: multer.memoryStorage() });
 
-const verifyToken = require("../middleware/auth"); // ✅ Your existing middleware
+const verifyToken = require("../middleware/auth");
 const Group = require("../models/Group");
 const Expense = require("../models/Expense");
 
@@ -22,7 +22,7 @@ router.post("/groups", verifyToken, async (req, res) => {
   }
 });
 
-// ✅ Get groups for logged-in user
+// ✅ Get groups
 router.get("/groups", verifyToken, async (req, res) => {
   try {
     const groups = await Group.find({ createdBy: req.user.id });
@@ -33,13 +33,13 @@ router.get("/groups", verifyToken, async (req, res) => {
   }
 });
 
-// ✅ Add expense with image upload
+// ✅ Add expense
 router.post("/expenses", verifyToken, upload.single("image"), async (req, res) => {
   try {
     const { groupId, description, amount, paidBy } = req.body;
     let splitBetween = req.body["splitBetween[]"];
 
-    // Convert to array if single value
+    // Ensure it's an array
     if (!Array.isArray(splitBetween)) {
       splitBetween = [splitBetween];
     }
@@ -48,8 +48,12 @@ router.post("/expenses", verifyToken, upload.single("image"), async (req, res) =
       ? `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`
       : null;
 
+    if (!groupId) {
+      return res.status(400).json({ error: "groupId is required" });
+    }
+
     const expense = new Expense({
-      group: groupId, // ✅ field name is 'group' not 'groupId'
+      groupId,
       description,
       amount,
       paidBy,
@@ -65,20 +69,16 @@ router.post("/expenses", verifyToken, upload.single("image"), async (req, res) =
   }
 });
 
-// ✅ Get expenses for a group with optional filters
+// ✅ Get expenses
 router.get("/groups/:groupId/expenses", verifyToken, async (req, res) => {
   try {
     const { groupId } = req.params;
-    const filters = { group: groupId }; // ✅ again, use 'group'
+    const filters = {};
 
-    if (req.query.paidBy) {
-      filters.paidBy = req.query.paidBy;
-    }
-    if (req.query.desc) {
-      filters.description = { $regex: req.query.desc, $options: "i" };
-    }
+    if (req.query.paidBy) filters.paidBy = req.query.paidBy;
+    if (req.query.desc) filters.description = { $regex: req.query.desc, $options: "i" };
 
-    const expenses = await Expense.find(filters).sort({ createdAt: -1 });
+    const expenses = await Expense.find({ groupId, ...filters }).sort({ createdAt: -1 });
     res.json(expenses);
   } catch (err) {
     console.error(err);
