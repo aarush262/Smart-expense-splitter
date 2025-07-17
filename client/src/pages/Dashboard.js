@@ -67,8 +67,10 @@ function Dashboard({ user }) {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      setGroups([...groups, res.data]);
-      setSelectedGroupId(res.data._id);
+      const createdGroup = res.data;
+      setGroups([...groups, createdGroup]);
+      setSelectedGroupId(createdGroup._id);
+      setGroupCreated(createdGroup);
       setGroupName("");
       setMembers([]);
       setPaidBy("");
@@ -110,6 +112,14 @@ function Dashboard({ user }) {
 
     try {
       const formData = new FormData();
+      console.log("🧾 Submitting expense with:", {
+        groupId: groupCreated?._id,
+        desc: expenseDesc,
+        amount: expenseAmount,
+        paidBy,
+        splitBetween,
+      });
+
       formData.append("groupId", groupCreated._id);
       formData.append("description", expenseDesc);
       formData.append("amount", expenseAmount);
@@ -148,7 +158,7 @@ function Dashboard({ user }) {
       if (filters.desc) params.desc = filters.desc;
 
       const res = await axios.get(`https://smart-expense-splitter.onrender.com/api/groups/${groupId}/expenses`, {
-        headers: { Authorization: `Bearer ${token}`},
+        headers: { Authorization: `Bearer ${token}` },
         params,
       });
       setExpenses(res.data);
@@ -177,7 +187,6 @@ function Dashboard({ user }) {
     >
       <div className="absolute inset-0 bg-black bg-opacity-20 backdrop-blur-sm"></div>
 
-      {/* Logout Button */}
       <button
         onClick={() => {
           localStorage.removeItem("token");
@@ -336,15 +345,13 @@ function Dashboard({ user }) {
                       className="w-full rounded-md mb-2 border border-white/10"
                     />
                   )}
-                  {exp.splitBetween.map((person, i) =>
-                    person !== exp.paidBy && (
-                      <p key={i} className="text-sm text-gray-400">
-                        {person} owes{" "}
-                        <span className="text-montraAccent font-semibold">{exp.paidBy}</span> ₹
-                        {perPerson.toFixed(2)}
-                      </p>
-                    )
-                  )}
+                  {exp.splitBetween.map((person, i) => (
+                    <p key={i} className="text-sm text-gray-400">
+                      {person} owes{" "}
+                      <span className="text-montraAccent font-semibold">{exp.paidBy}</span> ₹
+                      {perPerson.toFixed(2)}
+                    </p>
+                  ))}
                 </div>
               );
             })}
