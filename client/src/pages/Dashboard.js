@@ -114,7 +114,10 @@ function Dashboard({ user }) {
       formData.append("description", expenseDesc);
       formData.append("amount", expenseAmount);
       formData.append("paidBy", paidBy);
-      splitBetween.forEach((p) => formData.append("splitBetween[]", p));
+      if (!splitBetween.includes(paidBy)) {
+        splitBetween.push(paidBy);
+      }
+      splitBetween.forEach((p) => formData.append("splitBetween", p));
       if (image) formData.append("image", image);
 
       for (const pair of formData.entries()) {

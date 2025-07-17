@@ -37,7 +37,7 @@ router.get("/groups", verifyToken, async (req, res) => {
 router.post("/expenses", verifyToken, upload.single("image"), async (req, res) => {
   try {
     const { groupId, description, amount, paidBy } = req.body;
-    let splitBetween = req.body["splitBetween[]"];
+    let splitBetween = req.body.splitBetween;
 
     // Ensure it's an array
     if (!Array.isArray(splitBetween)) {
