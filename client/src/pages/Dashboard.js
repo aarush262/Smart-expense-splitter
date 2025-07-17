@@ -114,7 +114,7 @@ function Dashboard({ user }) {
       formData.append("description", expenseDesc);
       formData.append("amount", expenseAmount);
       formData.append("paidBy", paidBy);
-      splitBetween.forEach((p) => formData.append("splitBetween", p)); // ✅ NO []
+      splitBetween.forEach((p) => formData.append("splitBetween", p));
       if (image) formData.append("image", image);
 
       await axios.post("https://smart-expense-splitter.onrender.com/api/expenses", formData, {
@@ -164,8 +164,7 @@ function Dashboard({ user }) {
   };
 
   return (
-    <div
-      className="relative min-h-screen bg-no-repeat bg-center bg-cover font-body text-montraText"
+    <div className="relative min-h-screen bg-no-repeat bg-center bg-cover font-body text-montraText"
       style={{
         backgroundImage: "url('/Background-image.jpg')",
         backgroundAttachment: "fixed",
@@ -173,10 +172,10 @@ function Dashboard({ user }) {
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center",
         filter: "brightness(1.2)",
-      }}
-    >
+      }}>
       <div className="absolute inset-0 bg-black bg-opacity-20 backdrop-blur-sm"></div>
 
+      {/* Logout Button */}
       <button
         onClick={() => {
           localStorage.removeItem("token");
@@ -321,12 +320,7 @@ function Dashboard({ user }) {
           <div className="bg-montraCard backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-white/10">
             <h2 className="text-xl font-bold mb-4">Expense Breakdown</h2>
             {expenses.map((exp, idx) => {
-              const numPeople = exp.splitBetween.includes(exp.paidBy)
-                ? exp.splitBetween.length - 1
-                : exp.splitBetween.length;
-
-              const perPerson = numPeople > 0 ? exp.amount / numPeople : 0;
-
+              const perPerson = exp.amount / exp.splitBetween.length;
               return (
                 <div key={idx} className="mb-4 border-b border-white/10 pb-4">
                   <h3 className="text-lg font-semibold text-white">{exp.description}</h3>
@@ -340,15 +334,13 @@ function Dashboard({ user }) {
                       className="w-full rounded-md mb-2 border border-white/10"
                     />
                   )}
-                  {exp.splitBetween
-                    .filter((person) => person !== exp.paidBy)
-                    .map((person, i) => (
-                      <p key={i} className="text-sm text-gray-400">
-                        {person} owes{" "}
-                        <span className="text-montraAccent font-semibold">{exp.paidBy}</span> ₹
-                        {perPerson.toFixed(2)}
-                      </p>
-                    ))}
+                  {exp.splitBetween.map((person, i) => (
+                    <p key={i} className="text-sm text-gray-400">
+                      {person} owes{" "}
+                      <span className="text-montraAccent font-semibold">{exp.paidBy}</span> ₹
+                      {perPerson.toFixed(2)}
+                    </p>
+                  ))}
                 </div>
               );
             })}
