@@ -1,43 +1,19 @@
 const express = require("express");
 const router = express.Router();
-const verifyToken = require("../middleware/auth");
+const multer = require("multer");
+const upload = multer({ storage: multer.memoryStorage() });
+
+const verifyToken = require("../middleware/auth"); // ✅ Your existing middleware
 const Group = require("../models/Group");
 const Expense = require("../models/Expense");
-const multer = require("multer");
-const cloudinary = require("cloudinary").v2;
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
-// Cloudinary config
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_SECRET,
-});
-
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: "expenses",
-    allowed_formats: ["jpg", "png", "jpeg"],
-  },
-});
-
-const upload = multer({ storage });
-
-// =====================
-// 🔐 PROTECTED ROUTES
-// =====================
-
-// 📌 Create Group
+// ✅ Create group
 router.post("/groups", verifyToken, async (req, res) => {
-  const { name, members } = req.body;
-
   try {
-    const group = new Group({
-      name,
-      members,
-      createdBy: req.userId,
-    });
+    const { name, members } = req.body;
+    const createdBy = req.user.id;
+
+    const group = new Group({ name, members, createdBy });
     await group.save();
     res.json(group);
   } catch (err) {
@@ -46,33 +22,39 @@ router.post("/groups", verifyToken, async (req, res) => {
   }
 });
 
-// 📌 Get Groups for logged-in user
+// ✅ Get groups for logged-in user
 router.get("/groups", verifyToken, async (req, res) => {
   try {
-    const groups = await Group.find({ createdBy: req.userId });
+    const groups = await Group.find({ createdBy: req.user.id });
     res.json(groups);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch groups" });
+    console.error(err);
+    res.status(500).json({ error: "Failed to load groups" });
   }
 });
 
-// 📌 Add Expense (💥 FIXED CODE BELOW)
+// ✅ Add expense with image upload
 router.post("/expenses", verifyToken, upload.single("image"), async (req, res) => {
   try {
-    let splitMembers = Array.isArray(req.body["splitBetween[]"])
-      ? req.body["splitBetween[]"]
-      : [req.body["splitBetween[]"]];
+    const { groupId, description, amount, paidBy } = req.body;
+    let splitBetween = req.body["splitBetween[]"];
 
-    // Remove paidBy person from split
-    splitMembers = splitMembers.filter((member) => member !== req.body.paidBy);
+    // Convert to array if single value
+    if (!Array.isArray(splitBetween)) {
+      splitBetween = [splitBetween];
+    }
+
+    const image = req.file
+      ? data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}
+      : null;
 
     const expense = new Expense({
-      groupId: req.body.groupId,
-      description: req.body.description,
-      amount: req.body.amount,
-      paidBy: req.body.paidBy,
-      splitBetween: splitMembers,
-      image: req.file?.path,
+      group: groupId, // ✅ field name is 'group' not 'groupId'
+      description,
+      amount,
+      paidBy,
+      splitBetween,
+      image,
     });
 
     await expense.save();
@@ -83,26 +65,24 @@ router.post("/expenses", verifyToken, upload.single("image"), async (req, res) =
   }
 });
 
-// 📌 Get Expenses (with optional filters)
+// ✅ Get expenses for a group with optional filters
 router.get("/groups/:groupId/expenses", verifyToken, async (req, res) => {
-  const { groupId } = req.params;
-  const { paidBy, desc } = req.query;
-
   try {
-    let query = { groupId };
+    const { groupId } = req.params;
+    const filters = { group: groupId }; // ✅ again, use 'group'
 
-    if (paidBy) {
-      query.paidBy = paidBy;
+    if (req.query.paidBy) {
+      filters.paidBy = req.query.paidBy;
     }
-    if (desc) {
-      query.description = { $regex: desc, $options: "i" };
+    if (req.query.desc) {
+      filters.description = { $regex: req.query.desc, $options: "i" };
     }
 
-    const expenses = await Expense.find(query);
+    const expenses = await Expense.find(filters).sort({ createdAt: -1 });
     res.json(expenses);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Failed to fetch expenses" });
+    res.status(500).json({ error: "Failed to load expenses" });
   }
 });
 
