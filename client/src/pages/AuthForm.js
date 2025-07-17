@@ -16,7 +16,7 @@ export default function AuthForm({ onAuthSuccess }) {
     e.preventDefault();
     setError("");
 
-    const url = isLogin ? "http://localhost:5000/api/auth/login" : "http://localhost:5000/api/auth/register";
+    const url = isLogin ? "https://smart-expense-splitter.onrender.com/api/auth/login" : "https://smart-expense-splitter.onrender.com/api/auth/register";
 
     try {
       const res = await axios.post(url, form);

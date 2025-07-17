@@ -29,7 +29,7 @@ function Dashboard({ user }) {
 
   const loadGroups = async (token) => {
     try {
-      const res = await axios.get("http://localhost:5000/api/groups", {
+      const res = await axios.get("https://smart-expense-splitter.onrender.com/api/groups", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setGroups(res.data);
@@ -61,7 +61,7 @@ function Dashboard({ user }) {
 
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/groups",
+        "https://smart-expense-splitter.onrender.com/api/groups",
         { name: groupName, members },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -117,7 +117,7 @@ function Dashboard({ user }) {
       splitBetween.forEach((p) => formData.append("splitBetween[]", p));
       if (image) formData.append("image", image);
 
-      await axios.post("http://localhost:5000/api/expenses", formData, {
+      await axios.post("https://smart-expense-splitter.onrender.com/api/expenses", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
@@ -147,7 +147,7 @@ function Dashboard({ user }) {
       if (filters.paidBy) params.paidBy = filters.paidBy;
       if (filters.desc) params.desc = filters.desc;
 
-      const res = await axios.get(`http://localhost:5000/api/groups/${groupId}/expenses`, {
+      const res = await axios.get(`https://smart-expense-splitter.onrender.com/api/groups/${groupId}/expenses`, {
         headers: { Authorization: `Bearer ${token}`},
         params,
       });
