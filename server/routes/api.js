@@ -45,7 +45,7 @@ router.post("/expenses", verifyToken, upload.single("image"), async (req, res) =
     }
 
     const image = req.file
-      ? data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}
+      ? `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`
       : null;
 
     const expense = new Expense({
